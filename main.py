@@ -12,6 +12,7 @@ cursor = conn.cursor()
 flag = {}
 matricola = {}
 chat_id = 0
+logged = 0
 id_lez_corrente = "" #salva id lezione per evitare problemi
 id_lez = ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21",
          "22","23","24","25","26"]
@@ -25,10 +26,6 @@ def start(message):
     bot.send_message(chat_id,'Inserisci matricola, 6 numeri')
     global flag
     flag[message.chat.id] = 0
-    login(message)
-    #ste 2 cose sotto da toglie, solo per skipping
-    #matricola[chat_id] = 300123
-    #scelta_lezioni(message)
 
 def db_check_mat(matricola: int,message):
     cursor.execute("SELECT COUNT(password) FROM studenti WHERE matricola LIKE ?",(matricola[message.chat.id],))
@@ -43,6 +40,8 @@ def db_check_psw(matricola: int,psw,message):
     cursor.execute("SELECT password FROM studenti WHERE matricola LIKE ?",(matricola[message.chat.id],))
     if psw == cursor.fetchone()[0]:
         msg = bot.send_message(message.chat.id,'Password corretta! Benvenuto '+matricola[chat_id])
+        global logged
+        logged = 1
         homepage(message)
     else:
         bot.send_message(message.chat.id,'Password errata')
@@ -57,8 +56,12 @@ def login(message):
             db_check_mat(matricola,message)
         else:
             bot.reply_to(message, "La matricola che hai inserito non è di 6 numeri")
-    else:
+    elif logged == 0:
         db_check_psw(matricola,message.text,message)
+    else:
+        bot.reply_to(message, "Non scrivere mentre guidi")
+        homepage(message)
+
 
 def homepage(message):
     markup_home = types.InlineKeyboardMarkup()
@@ -135,7 +138,7 @@ def lezione(call):
         markup_lez.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro_lez1"))
     else:
         markup_lez.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro_lez2"))
-    cursor.execute('SELECT COUNT(posto) FROM prenotazioni WHERE matricola LIKE ?',(matricola[chat_id],))
+    cursor.execute('SELECT COUNT(posto) FROM prenotazioni WHERE matricola LIKE ? and id_lezione LIKE ?',(matricola[chat_id],id_lez_corrente,))
     if cursor.fetchone()[0] == 0:
         markup_lez.add(types.InlineKeyboardButton("Prenotati",callback_data="prenotazione"))
     else:
@@ -149,12 +152,15 @@ def lez_info(roba):
 @bot.callback_query_handler(func=lambda call: call.data == "prenotazione")
 def prenotazione(call):
     markup_pren = types.InlineKeyboardMarkup()
-    markup_pren.row_width = 5
-    cursor.execute('SELECT posto FROM prenotazioni WHERE matricola LIKE ? AND id_lezione LIKE ?',(matricola[chat_id],id_lez_corrente,))
+    cursor.execute('SELECT posto FROM prenotazioni WHERE id_lezione LIKE ?',(id_lez_corrente,))
     roba = cursor.fetchall()
+    postii = []
+    for i in roba:
+        postii.append(i[0])
     for i in range(1,21):
-        if i not in roba:
-            markup_pren.add(types.InlineKeyboardButton(str(i),callback_data="p"+str(i)))#GESTIONE DA FARE
+        if i not in postii:
+            markup_pren.add(types.InlineKeyboardButton(str(i),callback_data="p"+str(i)))
+    markup_pren.row_width = 5
     markup_pren.add(types.InlineKeyboardButton("Torna indietro",callback_data=id_lez_corrente))
     bot.send_message(chat_id,"Scegli un posto disponibile: ",reply_markup=markup_pren)
 
@@ -169,8 +175,9 @@ def nuova_prenotazione(call):
     homepage(call)
 
 @bot.callback_query_handler(func=lambda call: call.data in id_cancella)
-def cancellazione(call):
+def cancella(call):
     call.data = call.data.replace('c', '')
+    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
     #cursor.execute('INSERT INTO prenotazioni (matricola, id_lezione, posto) VALUES (?,?,?)',(matricola[chat_id],id_lez_corrente,call.data,))
     #conn.commit()
     #cursor.execute('UPDATE lezioni SET posti_disponibili = posti_disponibili + 1 WHERE id LIKE ? and posti_disponibili < 20',(call.data,))
@@ -199,6 +206,6 @@ def prenotazioni(call):
 @bot.callback_query_handler(func=lambda call: call.data == "esci")
 def esci(call):
     bot.send_message(chat_id,"Logout effettuato")
-    #non finito
+    #non finito !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 bot.infinity_polling()
