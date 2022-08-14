@@ -17,7 +17,8 @@ id_lez_corrente = "" #salva id lezione per evitare problemi
 id_lez = ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21",
          "22","23","24","25","26"]
 id_posto = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13","p14","p15","p16","p17","p18","p19","p20"]
-id_cancella = ["c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","c14","c15","c16","c17","c18","c19","c20"]
+id_cancella = ["c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","c14","c15","c16","c17","c18","c19","c20",
+                "c21","c22","c23","c24","c25","c26"]
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -59,7 +60,7 @@ def login(message):
     elif logged == 0:
         db_check_psw(matricola,message.text,message)
     else:
-        bot.reply_to(message, "Non scrivere mentre guidi")
+        bot.reply_to(message, "Utilizza soltanto i bottoni")
         homepage(message)
 
 
@@ -142,7 +143,7 @@ def lezione(call):
     if cursor.fetchone()[0] == 0:
         markup_lez.add(types.InlineKeyboardButton("Prenotati",callback_data="prenotazione"))
     else:
-        markup_lez.add(types.InlineKeyboardButton("Cancella prenotazione",callback_data="cancella"))
+        markup_lez.add(types.InlineKeyboardButton("Cancella prenotazione",callback_data="c"+id_lez_corrente))#gestire!!!!!!!!
     bot.send_message(chat_id,"Scegli: ",reply_markup=markup_lez)
 
 def lez_info(roba):
@@ -174,16 +175,6 @@ def nuova_prenotazione(call):
     bot.send_message(chat_id,"Posto numero " + call.data+ " prenotato!")
     homepage(call)
 
-@bot.callback_query_handler(func=lambda call: call.data in id_cancella)
-def cancella(call):
-    call.data = call.data.replace('c', '')
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-    #cursor.execute('INSERT INTO prenotazioni (matricola, id_lezione, posto) VALUES (?,?,?)',(matricola[chat_id],id_lez_corrente,call.data,))
-    #conn.commit()
-    #cursor.execute('UPDATE lezioni SET posti_disponibili = posti_disponibili + 1 WHERE id LIKE ? and posti_disponibili < 20',(call.data,))
-    #conn.commit()
-    bot.send_message(chat_id,"Prenotazione cancellata")
-    homepage(call)
 
 @bot.callback_query_handler(func=lambda call: call.data == "prenotazioni")
 def prenotazioni(call):
@@ -196,16 +187,30 @@ def prenotazioni(call):
         info = cursor.fetchall()
         lez_info(info)
         bot.send_message(chat_id,"Il tuo posto prenotato è il numero: "+str(i[3]))
-        markup_pren_list.add(types.InlineKeyboardButton("Cancella prenotazione",callback_data="c"+str(i[0])))#GESTIONE DA FARE
+        markup_pren_list.add(types.InlineKeyboardButton("Cancella prenotazione",callback_data="c"+str(i[2])))#GESTIONE DA FARE
         bot.send_message(chat_id,"-",reply_markup=markup_pren_list)
     markup = types.InlineKeyboardMarkup()
     markup.row_width = 1
     markup.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro_home"))
     bot.send_message(chat_id,"-",reply_markup=markup)
 
+@bot.callback_query_handler(func=lambda call: call.data in id_cancella)
+def cancella(call):
+    call.data = call.data.replace('c', '')
+    cursor.execute('DELETE FROM prenotazioni WHERE matricola LIKE ? and id_lezione LIKE ?',(matricola[chat_id],call.data,))
+    conn.commit()
+    cursor.execute('UPDATE lezioni SET posti_disponibili = posti_disponibili + 1 WHERE id LIKE ? and posti_disponibili < 20',(call.data,))
+    conn.commit()
+    bot.send_message(chat_id,"Prenotazione cancellata")
+    homepage(call)
+
+
 @bot.callback_query_handler(func=lambda call: call.data == "esci")
 def esci(call):
     bot.send_message(chat_id,"Logout effettuato")
+    global logged
+    logged = 0
+    start(call)
     #non finito !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 bot.infinity_polling()
