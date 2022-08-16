@@ -178,17 +178,20 @@ def nuova_prenotazione(call):
 
 @bot.callback_query_handler(func=lambda call: call.data == "prenotazioni")
 def prenotazioni(call):
-    markup_pren_list = types.InlineKeyboardMarkup()
-    markup_pren_list.row_width = 1
     cursor.execute('SELECT * FROM prenotazioni WHERE matricola LIKE ? ',(matricola[chat_id],))
     roba = cursor.fetchall()
+    markup_canc = {}
+    a = 0
     for i in roba:
         cursor.execute('SELECT * FROM lezioni WHERE id LIKE ?',(i[2],))
         info = cursor.fetchall()
         lez_info(info)
         bot.send_message(chat_id,"Il tuo posto prenotato è il numero: "+str(i[3]))
-        markup_pren_list.add(types.InlineKeyboardButton("Cancella prenotazione",callback_data="c"+str(i[2])))#GESTIONE DA FARE
-        bot.send_message(chat_id,"-",reply_markup=markup_pren_list)
+        markup_canc[a] = types.InlineKeyboardMarkup()
+        markup_canc[a].row_width = 1
+        markup_canc[a].add(types.InlineKeyboardButton("Cancella prenotazione",callback_data="c"+str(i[2])))#GESTIONE DA FARE
+        bot.send_message(chat_id,"-",reply_markup=markup_canc[a])
+        a = a + 1
     markup = types.InlineKeyboardMarkup()
     markup.row_width = 1
     markup.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro_home"))
@@ -207,10 +210,8 @@ def cancella(call):
 
 @bot.callback_query_handler(func=lambda call: call.data == "esci")
 def esci(call):
-    bot.send_message(chat_id,"Logout effettuato")
+    bot.send_message(chat_id,"Logout effettuato, premere /start")
     global logged
     logged = 0
-    start(call)
-    #non finito !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 bot.infinity_polling()
