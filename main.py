@@ -13,7 +13,7 @@ flag = {}
 matricola = {}
 chat_id = 0
 logged = 0
-id_lez_corrente = "" #salva id lezione per evitare problemi
+id_lez_corrente = "" 
 id_lez = ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21",
          "22","23","24","25","26"]
 id_posto = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13","p14","p15","p16","p17","p18","p19","p20"]
@@ -69,7 +69,7 @@ def login(message):
             leng = False
             num = False
             upp = False
-            if len(message.text)>=6:
+            if len(message.text)>=6 and len(message.text)<=20:
                 leng = True
             for i in message.text:
                 if i.isnumeric():
@@ -79,7 +79,7 @@ def login(message):
             if leng and num and upp:
                 db_check_psw(matricola,message.text,message)
             else:
-                bot.reply_to(message, "La password essere più lunga di 6 caratteri, deve avere 1 numero e 1 lettera grande")
+                bot.reply_to(message, "La password essere più lunga di 6 caratteri e minore di 20, deve avere 1 numero e 1 lettera grande")
                 bot.delete_message(message.chat.id,message.id)
         else:
             bot.reply_to(message, "Utilizza soltanto i comandi")
