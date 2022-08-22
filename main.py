@@ -131,7 +131,7 @@ def lista_lezioni_secondo(call):
         markup_secondo.add(types.InlineKeyboardButton(i[0]+" "+i[1],callback_data=a))
         a = a + 1
     markup_secondo.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro"))
-    bot.send_message(chat_id,"Lista delle lezioni del primo anno, cliccane una per prenotarti e avere informazioni aggiuntive: ",reply_markup=markup_secondo)
+    bot.send_message(chat_id,"Lista delle lezioni del secondo anno, cliccane una per prenotarti e avere informazioni aggiuntive: ",reply_markup=markup_secondo)
 
 @bot.callback_query_handler(func=lambda call: call.data == "indietro")
 def indietro(call):
@@ -159,19 +159,18 @@ def lezione(call):
     lez_info(query)
     markup_lez = types.InlineKeyboardMarkup()
     markup_lez.row_width = 2
-    if int(call.data) > 11:
-        markup_lez.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro_lez1"))
-    else:
-        markup_lez.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro_lez2"))
     cursor.execute('SELECT COUNT(posto) FROM prenotazioni WHERE matricola LIKE ? and id_lezione LIKE ?',(matricola[chat_id],id_lez_corrente,))
     if cursor.fetchone()[0] == 0:
         markup_lez.add(types.InlineKeyboardButton("Prenotati",callback_data="prenotazione"))
     else:
         markup_lez.add(types.InlineKeyboardButton("Cancella prenotazione",callback_data="c"+id_lez_corrente))#gestire!!!!!!!!
+    if int(call.data) > 11:
+        markup_lez.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro_lez1"))
+    else:
+        markup_lez.add(types.InlineKeyboardButton("Torna indietro",callback_data="indietro_lez2"))
     bot.send_message(chat_id,"Scegli: ",reply_markup=markup_lez)
 
 def lez_info(query):
-    print(type(query))
     bot.send_message(chat_id,"Corso: "+str(query[0][1])+"\nData e ora inizio: "+str(query[0][2])+"\nAula: "+str(query[0][3])+"\nDocente: "+str(query[0][4])+"\nPosti disponibili: "+str(query[0][5]))
 
 
